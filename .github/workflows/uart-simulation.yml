@@ -1,0 +1,29 @@
+name: UART simulation
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  simulate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Icarus Verilog
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iverilog
+
+      - name: Compile and run self-checking testbench
+        run: bash scripts/run_sim.sh
+
+      - name: Upload waveform and simulation log
+        uses: actions/upload-artifact@v4
+        with:
+          name: uart-simulation-results
+          path: |
+            build/uart_loopback.vcd
+            build/simulation.log
