@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 // UART transmitter: 8-bit default, LSB first, 1 start bit, 1 stop bit.
 module uart_tx #(
     parameter integer CLKS_PER_BIT = 16,
