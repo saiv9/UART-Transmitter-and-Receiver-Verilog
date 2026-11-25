@@ -95,4 +95,13 @@ module uart_tx #(
             endcase
         end
     end
+    `ifndef SYNTHESIS
+    initial begin
+        if (CLKS_PER_BIT < 2)
+            $error("CLKS_PER_BIT must be at least 2.");
+        if (DATA_BITS < 1)
+            $error("DATA_BITS must be at least 1.");
+    end
+    `endif
+
 endmodule
