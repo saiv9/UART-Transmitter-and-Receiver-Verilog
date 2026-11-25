@@ -1,34 +1,25 @@
-# UART Transmitter and Receiver in Verilog
+# UART Transmitter and Receiver
 
-A basic UART block written in Verilog HDL. The design contains separate transmitter and receiver modules and a top-level wrapper. It uses one start bit, eight data bits by default, one stop bit, and least-significant-bit-first transmission.
+[![UART simulation](https://github.com/saiv9/UART-Transmitter-and-Receiver-Verilog/actions/workflows/uart-simulation.yml/badge.svg)](https://github.com/saiv9/UART-Transmitter-and-Receiver-Verilog/actions/workflows/uart-simulation.yml)
 
-## What is included
+A basic UART transmitter and receiver implemented in Verilog HDL. The design uses one start bit, eight data bits by default, one stop bit, and least-significant-bit-first data transmission.
 
-- Parameterized clock cycles per serial bit and data width.
-- UART transmitter with `tx_busy` and one-cycle `tx_done` status.
-- UART receiver with a two-flop input synchronizer.
-- Mid-bit start validation and data sampling.
-- Framing-error indication when the stop bit is low.
-- Self-checking loopback testbench and a separate bad-stop-bit test.
-- Icarus Verilog simulation script and GitHub Actions workflow.
+## Design features
+
+- Separate transmitter and receiver modules
+- Configurable clock cycles per serial bit and data width
+- Idle-high TX output with `tx_busy` and one-cycle `tx_done` status
+- Two-flop synchronizer on the asynchronous RX input
+- Mid-bit start validation and data sampling
+- One-cycle `rx_valid` pulse for valid frames
+- Framing-error indication when the stop bit is low
+- Self-checking loopback and invalid-stop-bit tests
 
 ## Architecture
 
 ![UART architecture](docs/architecture.svg)
 
-The transmitter converts a parallel word into a serial frame. The receiver synchronizes the asynchronous input, checks the start bit near its midpoint, samples each data bit, and validates the stop bit. The top-level module exposes independent TX and RX pins; the testbench connects TX to RX for loopback verification.
-
-## Files
-
-| Path | Purpose |
-|---|---|
-| `rtl/uart_tx.v` | Serial transmitter |
-| `rtl/uart_rx.v` | Serial receiver |
-| `rtl/uart_top.v` | TX/RX top-level integration |
-| `tb/tb_uart_top.v` | Self-checking testbench |
-| `docs/verification-plan.md` | Test cases and verification scope |
-| `scripts/run_sim.sh` | Compile and run with Icarus Verilog |
-| `.github/workflows/uart-simulation.yml` | Automated simulation on GitHub Actions |
+The transmitter converts a parallel word into a serial frame. The receiver synchronizes the serial input, validates the start bit near its midpoint, samples each data bit, and checks the stop bit. The top-level module exposes independent TX and RX pins. The testbench connects TX to RX for loopback checks.
 
 ## Interface
 
@@ -36,14 +27,14 @@ The transmitter converts a parallel word into a serial frame. The receiver synch
 
 | Parameter | Default | Description |
 |---|---:|---|
-| `CLKS_PER_BIT` | 16 | Clock cycles per UART bit; must be at least 2 |
+| `CLKS_PER_BIT` | 16 | System-clock cycles per serial bit; must be at least 2 |
 | `DATA_BITS` | 8 | Number of data bits per frame |
 
-Choose `CLKS_PER_BIT` to match the clock frequency and desired baud rate:
+The divider is calculated from the system clock and target baud rate:
 
 `CLKS_PER_BIT = CLOCK_FREQUENCY / BAUD_RATE`
 
-The division should produce an integer for this implementation. The default value of 16 is intended for simulation and is not tied to a particular board clock or standard baud rate.
+This implementation uses an integer divider. The selected clock and baud rate should therefore be checked for divider error. The default value is a simulation setting, not a board-specific baud-rate configuration.
 
 ### Top-level signals
 
@@ -61,39 +52,35 @@ The division should produce an integer for this implementation. The default valu
 | `rx_valid` | Output | One-clock pulse for a valid frame |
 | `framing_error` | Output | One-clock pulse if the stop bit is low |
 
-## Example instantiation
-
-```verilog
-uart_top #(
-    .CLKS_PER_BIT(434),
-    .DATA_BITS(8)
-) uart_inst (
-    .clk(clk),
-    .rst_n(rst_n),
-    .tx_start(tx_start),
-    .tx_data(tx_data),
-    .rx(rx),
-    .tx(tx),
-    .tx_busy(tx_busy),
-    .tx_done(tx_done),
-    .rx_data(rx_data),
-    .rx_valid(rx_valid),
-    .framing_error(framing_error)
-);
-```
-
-The example divider is illustrative only. Calculate it from the actual system clock and target baud rate, and account for integer-divider error in a real design.
-
 ## Run the simulation
 
 Install Icarus Verilog, then run from the repository root:
 
-```sh
+```bash
 bash scripts/run_sim.sh
 ```
 
-The testbench checks loopback for `00`, `FF`, `A5`, `3C`, and `96`, checks transmitter completion, and verifies that a low stop bit raises `framing_error`. It writes a VCD waveform to `build/uart_loopback.vcd`. GitHub Actions runs the same test and uploads the waveform and simulation log as an artifact.
+The self-checking testbench verifies loopback for `00`, `FF`, `A5`, `3C`, and `96`, checks TX completion, and injects a frame with an invalid stop bit. A successful run reports five loopback passes and one framing-error pass.
 
-## Verification scope
+The VCD waveform and simulation log are written to `build/`. GitHub Actions runs the same testbench and uploads both files as an artifact.
 
-The testbench is simulation-based. It does not establish timing closure or operation on a physical FPGA board. This project does not include parity, configurable stop-bit count, FIFO buffering, flow control, or automatic baud-rate detection.
+## Repository layout
+
+```text
+rtl/uart_tx.v                  Transmitter
+rtl/uart_rx.v                  Receiver
+rtl/uart_top.v                 Top-level integration
+tb/tb_uart_top.v               Self-checking testbench
+docs/architecture.svg          Block diagram
+docs/verification-plan.md       Verification cases
+scripts/run_sim.sh              Local simulation script
+.github/workflows/              Automated simulation
+```
+
+## Scope
+
+This project covers a basic asynchronous UART frame. It does not include parity, a configurable stop-bit count, FIFO buffering, hardware flow control, or automatic baud-rate detection. Verification is simulation-based; no physical FPGA board test or timing-closure result is claimed.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
