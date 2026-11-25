@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 // UART receiver with a two-flop input synchronizer and mid-bit sampling.
 module uart_rx #(
     parameter integer CLKS_PER_BIT = 16,
