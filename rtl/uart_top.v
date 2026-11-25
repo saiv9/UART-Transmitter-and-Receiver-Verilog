@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 // Top-level UART block: one transmitter and one receiver.
 module uart_top #(
     parameter integer CLKS_PER_BIT = 16,
